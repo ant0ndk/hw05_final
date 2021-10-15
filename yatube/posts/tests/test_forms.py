@@ -6,6 +6,7 @@ from django.contrib.auth import get_user_model
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import Client, TestCase, override_settings
 from django.urls import reverse
+from django.core.cache import cache
 
 from posts.models import Group, Post, Comment
 from posts.forms import PostForm
@@ -22,6 +23,7 @@ class PostFormTest(TestCase):
         super().setUpClass()
         settings.MEDIA_ROOT = tempfile.mkdtemp(dir=settings.BASE_DIR)
         cls.form = PostForm()
+        cls.guest_client = Client()
         cls.user = User.objects.create_user(username='test_user')
         cls.group = Group.objects.create(
             title='Test group',
@@ -47,6 +49,7 @@ class PostFormTest(TestCase):
     def setUp(self):
         self.authorized_client = Client()
         self.authorized_client.force_login(PostFormTest.user)
+        cache.clear()
 
     def test_create_post(self):
         """Валидная форма создаёт запись в Post"""
@@ -97,18 +100,36 @@ class PostFormTest(TestCase):
         kwargs_post = {
             'post_id': post_id,
         }
-
         response = self.authorized_client.post(
             reverse('posts:post_edit', kwargs=kwargs_post),
             data=post_data,
             follow=True,
         )
-
         self.assertRedirects(response,
                              reverse('posts:post_detail', kwargs=kwargs_post))
         self.assertEqual(Post.objects.get(id=post_id).text, post_data['text'])
         self.assertEqual(Post.objects.get(id=post_id).group.id,
                          post_data['group'])
+
+    def test_guest_cant_create_post(self):
+        posts_count = Post.objects.count()
+        form_data = {
+            'text': 'guest post text',
+        }
+        response = self.guest_client.post(
+            reverse('posts:post_create'),
+            data=form_data,
+            follow=True
+        )
+        self.assertEqual(Post.objects.count(), posts_count)
+        self.assertEqual(response.status_code, 200)
+        self.assertRedirects(
+            response,
+            reverse('users:login') + '?next=' + reverse('posts:post_create')
+        )
+        self.assertFalse(
+            Post.objects.filter(text=form_data['text'],).exists()
+        )
 
 
 @override_settings(MEDIA_ROOT=TEMP_MEDIA_ROOT)
@@ -150,7 +171,6 @@ class CommentFormTests(TestCase):
             reverse('posts:post_detail', args={self.post.pk})
         )
         self.assertEqual(self.post.comments.count(), comments_count + 1)
-
         comment = Comment.objects.first()
         print(comment)
         self.assertEqual(comment.text, form_data['text'])

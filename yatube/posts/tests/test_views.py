@@ -32,6 +32,7 @@ class TaskPagesTests(TestCase):
             content=small_gif,
             content_type='image/gif'
         )
+        self.guest_client = Client()
         # Создаем авторизованный клиент
         self.user = User.objects.create_user(username='AntonKarpov')
         self.authorized_client = Client()
@@ -62,6 +63,11 @@ class TaskPagesTests(TestCase):
         self.public_profile = 'posts/profile.html'
         self.public_post = 'posts/post_detail.html'
         cache.clear()
+
+    @classmethod
+    def tearDownClass(cls):
+        super().tearDownClass()
+        shutil.rmtree(TEMP_MEDIA_ROOT, ignore_errors=True)
 
     # Проверяем используемые шаблоны
     def test_pages_use_correct_template(self):
@@ -104,6 +110,14 @@ class TaskPagesTests(TestCase):
             self.assertContains(response, self.form_data['text'])
             self.assertContains(response, self.user)
             self.assertContains(response, self.group.id)
+
+    def test_group_context(self):
+        """Пост попадает в корректную группу."""
+        response = self.authorized_client.get(
+            reverse('posts:group_list', args={self.group.slug})
+        )
+        post = response.context['posts'][1]
+        self.assertEqual(post.pk, self.post.pk)
 
     def test_check_post_in_group(self):
         """Проверить пост в группе"""
@@ -246,7 +260,6 @@ class FollowViewsTest(TestCase):
         self.authorized_user.force_login(self.user)
         self.authorized_follower = Client()
         self.authorized_follower.force_login(self.follower)
-        # cache.clear()
 
     def test_follow(self):
         """Авторизованный пользователь может подписываться на авторов."""
@@ -264,6 +277,7 @@ class FollowViewsTest(TestCase):
 
     def test_unfollow(self):
         """Авторизованный пользователь может отписываться от авторов."""
+        Follow.objects.create(user=self.follower, author=self.author)
         self.authorized_follower.get(
             reverse(
                 'posts:profile_unfollow',
@@ -278,24 +292,13 @@ class FollowViewsTest(TestCase):
 
     def test_post_in_follower_index(self):
         """Новая запись автора появляется в ленте подписчиков."""
-        self.authorized_follower.get(
-            reverse(
-                'posts:profile_follow',
-                args={self.author.username}
-            )
-        )
+        Follow.objects.create(user=self.follower, author=self.author)
         response = self.authorized_follower.get(reverse('posts:follow_index'))
         post = response.context['posts'][0]
         self.assertEqual(post.text, self.post.text)
 
     def test_post_not_in_user_index(self):
         """Новой записи автора нет в ленте неподписанных пользователей."""
-        self.authorized_follower.get(
-            reverse(
-                'posts:profile_follow',
-                args={self.author.username}
-            )
-        )
         response = self.authorized_user.get(reverse('posts:follow_index'))
         posts = response.context['posts']
         self.assertNotIn(self.post, posts)

@@ -1,6 +1,7 @@
 from django.test import TestCase
 from posts.models import Post, Group
 from django.contrib.auth import get_user_model
+from django.core.cache import cache
 
 User = get_user_model()
 
@@ -15,6 +16,7 @@ class TestGroupModel(TestCase):
             slug='aaa789',
             description='Тестовый текст!1!1'
         )
+        cache.clear()
 
     def test_object_name_is_title_group(cls):
         group = Group.objects.all().first()

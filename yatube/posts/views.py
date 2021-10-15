@@ -126,13 +126,7 @@ def post_edit(request, post_id):
 
 @login_required
 def follow_index(request):
-    following = Follow.objects.filter(user=request.user).all()
-    author_list = []
-    for author in following:
-        author_list.append(author.author.id)
-    posts = Post.objects.filter(
-        author__in=author_list
-    ).order_by("-pub_date").all()
+    posts = Post.objects.filter(author__following__user=request.user)
     page_obj = paginator(request, posts)
     context = {
         'posts': posts,
@@ -149,7 +143,7 @@ def profile_follow(request, username):
     follow_check = Follow.objects.filter(
         user=user.id,
         author=author.id
-    ).count()
+    ).exists()
     if follow_check == 0 and author.id != user.id:
         Follow.objects.create(user=request.user, author=author)
     return redirect('posts:profile', username=username)
