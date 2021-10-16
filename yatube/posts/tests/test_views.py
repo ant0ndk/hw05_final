@@ -323,11 +323,9 @@ class CommentFormTests(TestCase):
     def setUp(self):
         self.authorized_author = Client()
         self.authorized_author.force_login(self.author)
-    
+
     def test_auth_can_create_comment(self):
         """Aвторизированный пользователь создаёт комментарий."""
-        post = self.post
-        comments_count = post.comments.count()
         form_data = {
             'text': 'Комментарий гостя',
         }
