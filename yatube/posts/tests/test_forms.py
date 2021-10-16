@@ -172,7 +172,6 @@ class CommentFormTests(TestCase):
         )
         self.assertEqual(self.post.comments.count(), comments_count + 1)
         comment = Comment.objects.first()
-        print(comment)
         self.assertEqual(comment.text, form_data['text'])
         self.assertEqual(comment.author, form_data['author'])
 

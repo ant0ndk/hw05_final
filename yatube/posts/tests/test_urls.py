@@ -33,10 +33,10 @@ class StaticURLTests(TestCase):
         self.templates_url_names = {
             '/': 'posts/index.html',
             '/group/testslug/': 'posts/group_list.html',
-            '/posts/1/edit/':
+            f'/posts/{self.post.id}/edit/':
                 'posts/create_post.html',
             '/create/': 'posts/create_post.html',
-            '/posts/1/': 'posts/post_detail.html',
+            f'/posts/{self.post.id}/': 'posts/post_detail.html',
             '/profile/author/': 'posts/profile.html'
         }
         self.url_list_for_guest = [self.public_index_url,

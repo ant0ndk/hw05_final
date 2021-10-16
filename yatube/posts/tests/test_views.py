@@ -302,3 +302,48 @@ class FollowViewsTest(TestCase):
         response = self.authorized_user.get(reverse('posts:follow_index'))
         posts = response.context['posts']
         self.assertNotIn(self.post, posts)
+
+
+@override_settings(MEDIA_ROOT=TEMP_MEDIA_ROOT)
+class CommentFormTests(TestCase):
+    @classmethod
+    def setUpClass(self):
+        super().setUpClass()
+        self.author = User.objects.create_user(username='test_author')
+        self.post = Post.objects.create(
+            text='Тестовый пост',
+            author=self.author,
+        )
+
+    @classmethod
+    def tearDownClass(self):
+        super().tearDownClass()
+        shutil.rmtree(TEMP_MEDIA_ROOT, ignore_errors=True)
+
+    def setUp(self):
+        self.authorized_author = Client()
+        self.authorized_author.force_login(self.author)
+    
+    def test_auth_can_create_comment(self):
+        """Aвторизированный пользователь создаёт комментарий."""
+        post = self.post
+        comments_count = post.comments.count()
+        form_data = {
+            'text': 'Комментарий гостя',
+        }
+        response = self.authorized_author.post(
+            reverse('posts:add_comment', args={self.post.pk}),
+            data=form_data,
+            follow=True
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertRedirects(
+            response,
+            reverse(
+                'posts:post_detail',
+                args={self.post.pk}
+            )
+        )
+        self.assertFalse(
+            Post.objects.filter(text=form_data['text'],).exists()
+        )
