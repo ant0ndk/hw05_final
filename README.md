@@ -12,20 +12,20 @@
 Запуск 
 1. клонировать репозиторий     
 ```sh
-    git clone https://github.com/ant0ndk/hw05_final.git
+git clone https://github.com/ant0ndk/hw05_final.git
 ```
 2. Создать вируальное окружение
 ```sh
-    python -m venv venv
+python -m venv venv
 ```
 3. Запустить виртуальное окружение
     - для Windows
 ```sh
-        source venv/Scripts/activate
+source venv/Scripts/activate
 ```
     - для Mac и Linux
 ```sh
-        source venv/bin/activate
+source venv/bin/activate
 ```
 4. Установить зависимости
 ```sh
@@ -33,18 +33,18 @@
 ```
 5. Запустить сервер Django
 ```sh
-    python manage.py runserver
+python manage.py runserver
 ```
 6. Сделать и запустить миграции
 ```sh
-    python manage.py makemigrations
-    python manage.py migrate
+python manage.py makemigrations
+python manage.py migrate
 ```
 7. Создать суперпользователя
 ```
-    python manage.py createsuperuser
+python manage.py createsuperuser
 ```
 8. Можно загрузить тестовые данные для проверки работоспособности проекта
 ```sh
-    python manage.py loaddata dump.json
+python manage.py loaddata dump.json
 ```
